@@ -44,7 +44,7 @@ You won't push this branch to GitHub, but you can still make commits.
 
 ### 4. Pay it Forward
 
-Congratulations 🙌, you've completed the [tutorial name] tutorial!
+Congratulations 🙌, you've completed the GO tutorial!
 
 1. If you found any ways to improve this tutorial (fix typos, improve text to be clearer etc.):
     1. Make a feature branch (named `feat/<something>`)
