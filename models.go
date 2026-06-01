@@ -15,6 +15,14 @@ type Schedule struct {
 	UserName string `json:"user_name"` // Name of the user who submitted the schedule
 }
 
+type User struct {
+	UserName string `json:"user_name"` // Name of the user who submitted the schedule
+	PasswordHash string `json:"password_hash"` // Hashed password for authentication
+	Role string `json:"role"` // Role can be "employee" or "admin"
+	ProfilePicture string `json:"profile_picture,omitempty"` // Optional URL or path to profile picture
+}
+
 type AppState struct {
-	Schedule map[string]*Schedule `json:"schedule"` // Map of user name to their schedule
+	Schedule map[string]*Schedule `json:"schedule"` // Map of user name to their schedule\
+	Users map[string]*User `json:"users"` // Map of user name to user details
 }
