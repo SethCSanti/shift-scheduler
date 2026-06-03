@@ -42,7 +42,7 @@ func registerSubmitView(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	email := r.FormValue("email")
-	confirmPassword := r.FormValue("confirm_password")
+	confirmPassword := r.FormValue("confirmPassword")
 
 	// Basic validation
 	if password != confirmPassword {

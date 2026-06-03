@@ -10,10 +10,12 @@
         <header>
             <h1><a href='/'>Shift Scheduler</a></h1>
             <nav>
-                <a href='/'>Home</a>
-                <a href='/schedule'>Schedule</a>
-                <a href='/approval'>Approval</a>
                 {{if .User}}
+                    <a href='/'>Home</a>
+                    <a href='/schedule'>Schedule</a>
+                    {{if eq .User.Role "admin"}}
+                        <a href='/approval'>Approval</a>
+                    {{end}}
                     <span>Logged in as {{.User.UserName}}</span>
                     <form method="POST" action="/logout">
                         <button type="submit">Logout</button>
