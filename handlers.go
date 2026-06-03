@@ -4,8 +4,10 @@ import (
 	// native Go packages
 	"html/template"
 	"net/http"
+
 	// internal packages
 	// 3rd party packages
+	"golang.org/x/crypto/bcrypt"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -27,39 +29,111 @@ func home(w http.ResponseWriter, r *http.Request) {
 // phase 1 handlers
 
 func registerView(w http.ResponseWriter, r *http.Request) {
-
+	tmpl, err := template.ParseFiles("templates/base.html", "templates/register.html")
+	if err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
+	tmpl.ExecuteTemplate(w, "base", TemplateData{})
 }
 
 func registerSubmitView(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+    // Parse form data
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+	email := r.FormValue("email")
+	confirmPassword := r.FormValue("confirm_password")
+
+	// Basic validation
+	if password != confirmPassword {
+		data := TemplateData{
+			ErrorMessage: "Passwords do not match",
+		}
+		tmpl, err := template.ParseFiles("templates/base.html", "templates/register.html")
+		if err != nil {
+			http.Error(w, "template error", http.StatusInternalServerError)
+			return
+		}
+		tmpl.ExecuteTemplate(w, "base", data)
 		return
 	}
-	w.Write([]byte("Register submit view"))
+
+	if _, exists := app.Users[username]; exists {
+		data := TemplateData{
+			ErrorMessage: "Username already exists",
+		}
+		tmpl, err := template.ParseFiles("templates/base.html", "templates/register.html")
+		if err != nil {
+			http.Error(w, "template error", http.StatusInternalServerError)
+			return
+		}
+		tmpl.ExecuteTemplate(w, "base", data)
+		return
+	}
+
+	// Hash the password
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "error hashing password", http.StatusInternalServerError)
+		return
+	}
+
+    // Create new user and store in app state
+    role := "employee" // Default role for new users
+    if len(app.Users) == 0 {
+        role = "admin" // First user becomes admin
+    }
+    app.Users[username] = &User{
+        UserName: username,
+        PasswordHash: string(hash),
+        Role: role,
+        Email: email,
+    }
+
+    // Redirect to login page after successful registration
+    http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 func loginView(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	tmpl, err := template.ParseFiles("templates/base.html", "templates/login.html")
+	if err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte("Login view"))
+	tmpl.ExecuteTemplate(w, "base", TemplateData{})
 }
 
 func loginSubmitView(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	w.Write([]byte("Login submit view"))
+    // Parse form data
+    username := r.FormValue("username")
+    password := r.FormValue("password")
+
+    // Validate user credentials
+    user, exists := app.Users[username]
+    if !exists || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
+        data := TemplateData{
+            ErrorMessage: "Invalid username or password",
+        }
+        tmpl, err := template.ParseFiles("templates/base.html", "templates/login.html")
+        if err != nil {
+            http.Error(w, "template error", http.StatusInternalServerError)
+            return
+        }
+        tmpl.ExecuteTemplate(w, "base", data)
+        return
+    }
+
+    // Create a new session for the user
+    setSessionUser(w, username)
+    // Redirect to the home page
+    http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func logoutView(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	w.Write([]byte("Logout view"))
+    // Clear the session
+    clearSessionUser(w)
+    // Redirect to the home page
+    http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // phase 2 handlers
