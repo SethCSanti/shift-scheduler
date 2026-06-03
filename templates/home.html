@@ -1,0 +1,23 @@
+{{define "title"}}Home - Shift Scheduler{{end}}
+
+{{define "content"}}
+<div>
+    <h2>Welcome to Shift Scheduler</h2>
+
+    {{if .User}}
+        <p>Welcome back, {{.User.UserName}}!</p>
+        <nav>
+            <a href="/schedule">View My Schedule</a>
+            {{if eq .User.Role "admin"}}
+                <a href="/approval">Manage Approvals</a>
+            {{end}}
+        </nav>
+    {{else}}
+        <p>Manage and schedule your work shifts with ease.</p>
+        <div>
+            <a href="/register">Create an Account</a>
+            <a href="/login">Login</a>
+        </div>
+    {{end}}
+</div>
+{{end}}

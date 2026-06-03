@@ -20,7 +20,7 @@ type User struct {
 	PasswordHash string `json:"password_hash"` // Hashed password for authentication
 	Role string `json:"role"` // Role can be "employee" or "admin"
 	ProfilePicture string `json:"profile_picture,omitempty"` // Optional URL or path to profile picture
-	Email string `json:"email"` // Email address for registering and communication
+	Email string `json:"email"` // Email address for notifications
 }
 
 type AppState struct {
