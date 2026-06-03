@@ -2,15 +2,29 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <title>Home - Shift Scheduler</title>
+        <title>{{block "title" .}}Shift Scheduler{{end}}</title>
+        <script src='/static/htmx.min.js'></script>
     </head>
     <body>
         <header>
             <h1><a href='/'>Shift Scheduler</a></h1>
+            <nav>
+                <a href='/'>Home</a>
+                <a href='/schedule'>Schedule</a>
+                <a href='/approval'>Approval</a>
+                {{if .User}}
+                    <span>Logged in as {{.User.UserName}}</span>
+                    <form method="POST" action="/logout">
+                        <button type="submit">Logout</button>
+                    </form>
+                {{else}}
+                    <a href='/login'>Login</a>
+                    <a href='/register'>Register</a>
+                {{end}}
+            </nav>
         </header>
         <main>
-            <h2>Latest Schedules</h2>
-            <p>There's nothing to see here yet!</p>
+            {{block "content" .}}{{end}}
         </main>
         <footer>Powered by <a href='https://go.dev/'>Go</a></footer>
     </body>
