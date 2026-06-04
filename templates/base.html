@@ -1,5 +1,10 @@
 {{define "base"}}
 <!doctype html>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@100..700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/static/css/main.css">
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
@@ -10,19 +15,28 @@
         <header>
             <h1><a href='/'>Shift Scheduler</a></h1>
             <nav>
-                {{if .User}}
-                    <a href='/'>Home</a>
-                    <a href='/schedule'>Schedule</a>
-                    {{if eq .User.Role "admin"}}
-                        <a href='/approval'>Approval</a>
+                <div class="nav-links">
+                    {{if .User}}
+                        <a href="/">Home</a>
+                        <a href="/schedule">Schedule</a>
+
+                        {{if eq .User.Role "admin"}}
+                            <a href="/approval">Approval</a>
+                        {{end}}
+                    {{else}}
+                        <a href="/login">Login</a>
+                        <a href="/register">Register</a>
                     {{end}}
-                    <span>Logged in as {{.User.UserName}}</span>
-                    <form method="POST" action="/logout">
-                        <button type="submit">Logout</button>
-                    </form>
-                {{else}}
-                    <a href='/login'>Login</a>
-                    <a href='/register'>Register</a>
+                </div>
+
+                {{if .User}}
+                    <div class="nav-user">
+                        <span>{{.User.UserName}}</span>
+
+                        <form method="POST" action="/logout">
+                            <button type="submit">Logout</button>
+                        </form>
+                    </div>
                 {{end}}
             </nav>
         </header>

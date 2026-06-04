@@ -1,0 +1,316 @@
+:root {
+    /* BYU Colors */
+    --byu-navy: #002E5D;
+    --byu-royal: #0047BA;
+    --byu-white: #FFFFFF;
+
+    /* Text */
+    --text-primary: #141414;
+    --text-secondary: #666666;
+
+    /* Neutrals */
+    --border: #E5E7EB;
+    --light-gray: #F8F9FA;
+    --gray: #C7C9C7;
+
+    /* Status */
+    --success: #006141;
+    --warning: #8C3A00;
+    --error: #A3082A;
+    --info: #006073;
+
+    --radius: 6px;
+    --shadow: 0 2px 8px rgba(0,0,0,.08);
+
+    --content-width: 1200px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: "IBM Plex Sans", Helvetica, Arial, sans-serif;
+    font-weight: 425;
+    color: var(--text-primary);
+    background: white;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+
+
+/* =========================
+   HEADER
+========================= */
+
+header {
+    background: var(--byu-navy);
+    color: white;
+    padding: 0;
+}
+
+header h1 {
+    margin: 0;
+    padding: 1rem 2rem;
+    font-size: 1.75rem;
+    font-weight: 650;
+}
+
+header h1 a {
+    color: white;
+    text-decoration: none;
+}
+
+/* =========================
+   NAVIGATION
+========================= */
+
+header nav {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+header nav a {
+    color: var(--byu-navy);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+header nav a:hover {
+    color: var(--byu-royal);
+}
+
+header nav span {
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* =========================
+   MAIN
+========================= */
+
+main {
+    flex: 1;
+    max-width: var(--content-width);
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* =========================
+   TYPOGRAPHY
+========================= */
+
+h1 { font-weight: 650; }
+h2 {
+    font-size: 2rem;
+    font-weight: 650;
+    color: var(--byu-navy);
+    margin-top: 0;
+}
+h3 { font-weight: 640; }
+h4 { font-weight: 600; }
+
+p {
+    line-height: 1.6;
+}
+
+/* =========================
+   LINKS
+========================= */
+
+a {
+    color: var(--byu-royal);
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* =========================
+   FORMS
+========================= */
+
+form {
+    max-width: 450px;
+}
+
+form > div {
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: .5rem;
+    font-weight: 500;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: .75rem;
+    border: 1px solid var(--gray);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--byu-royal);
+    box-shadow: 0 0 0 3px rgba(0,71,186,.15);
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+button,
+.btn {
+    background: var(--byu-navy);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: .75rem 1.25rem;
+    cursor: pointer;
+    font-size: .95rem;
+    font-weight: 600;
+}
+
+button:hover,
+.btn:hover {
+    background: #00386f;
+}
+
+.btn-secondary {
+    background: var(--byu-royal);
+}
+
+.btn-secondary:hover {
+    background: #0056e0;
+}
+
+/* =========================
+   LOGIN / REGISTER
+========================= */
+
+.auth-card {
+    max-width: 500px;
+    margin: 3rem auto;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 2rem;
+}
+
+/* =========================
+   HOME PAGE
+========================= */
+
+.hero {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.hero h2 {
+    margin-bottom: 1rem;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+/* =========================
+   ALERTS
+========================= */
+
+.alert {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+}
+
+.alert-error {
+    background: #FDEBED;
+    border-left: 4px solid var(--error);
+}
+
+.alert-success {
+    background: #E7F7EF;
+    border-left: 4px solid var(--success);
+}
+
+.alert-warning {
+    background: #FFF6E0;
+    border-left: 4px solid var(--warning);
+}
+
+.alert-info {
+    background: #E8F7FB;
+    border-left: 4px solid var(--info);
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+footer {
+    background: var(--byu-navy);
+    color: white;
+    text-align: center;
+    padding: 1rem;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 768px) {
+
+    header nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    header nav span {
+        margin-left: 0;
+    }
+
+    main {
+        padding: 1rem;
+    }
+}
