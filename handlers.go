@@ -91,6 +91,7 @@ func registerSubmitView(w http.ResponseWriter, r *http.Request) {
     }
 
     // Redirect to login page after successful registration
+    saveData()
     http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
@@ -126,6 +127,7 @@ func loginSubmitView(w http.ResponseWriter, r *http.Request) {
     // Create a new session for the user
     setSessionUser(w, username)
     // Redirect to the home page
+    saveData()
     http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -148,10 +150,12 @@ func approvalView(w http.ResponseWriter, r *http.Request) {
 
 func submitView(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Submit view"))
+    saveData()
 }
 
 func decideView(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Decide view"))
+    saveData()
 }
 
 // phase 3 handlers
@@ -162,4 +166,5 @@ func profileView(w http.ResponseWriter, r *http.Request) {
 
 func pictureView(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Profile picture update view"))
+    saveData()
 }

@@ -11,17 +11,15 @@ import (
 var app AppState
 
 func main() {
-	mux := http.NewServeMux()
-	// create a file server that serves files from the "static" folder
-	fileServer := http.FileServer(http.Dir("./static"))
-
-	// register it to handle any request starting with /static/
-	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
-
 	app.Users = make(map[string]*User)
 	app.Schedule = make(map[string]*Schedule)
-    
-    // routes
+	loadData()
+
+	mux := http.NewServeMux()
+
+	fileServer := http.FileServer(http.Dir("./static"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
+
 	mux.HandleFunc("GET /{$}", home)                     // Returns full page, home page
 	mux.HandleFunc("GET /schedule", scheduleView)        // Returns full page, schedule view
 	mux.HandleFunc("GET /approval", approvalView)        // Returns full page, approval view
