@@ -7,11 +7,11 @@ import (
 )
 
 func loadData() {
-	if _, err := os.Stat("data.json"); err != nil {
+	if _, err := os.Stat("data/data.json"); err != nil {
 		return // file doesn't exist yet, start fresh
 	}
 
-	file, err := os.Open("data.json")
+	file, err := os.Open("data/data.json")
 	if err != nil {
 		log.Printf("Error opening data file: %v", err)
 		return
