@@ -1,12 +1,461 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule</title>
-</head>
-<body>
-    <h1>Schedule Page</h1>
-    <p>This is a basic HTML framework.</p>
-</body>
-</html>
+{{define "title"}}Schedule - Shift Scheduler{{end}}
+
+{{define "content"}}
+<style>
+    .schedule-container {
+        padding: 24px;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .schedule-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .schedule-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .weekly-total {
+        font-size: 1rem;
+        font-weight: 400;
+        color: #666;
+        margin-left: 8px;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 99px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-pending   { background: #fff3cd; color: #856404; }
+    .status-approved  { background: #d1fae5; color: #065f46; }
+    .status-rejected  { background: #fee2e2; color: #991b1b; }
+    .status-draft     { background: #e5e7eb; color: #374151; }
+
+    .btn {
+        padding: 6px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .btn-dark  { background: #1f2937; color: white; }
+    .btn-blue  { background: #3b5bdb; color: white; }
+    .btn-dark:hover { background: #374151; }
+    .btn-blue:hover { background: #364fc7; }
+
+    .rejection-notice {
+        background: #fee2e2;
+        border-left: 4px solid #ef4444;
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        color: #7f1d1d;
+    }
+
+    .rejection-notice strong {
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .legend {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+    }
+
+    .legend-swatch {
+        width: 20px;
+        height: 14px;
+        border-radius: 3px;
+    }
+
+    .swatch-selected   { background: #3b5bdb; }
+    .swatch-unselected { background: #9ca3af; }
+
+    .grid-wrapper {
+        overflow-x: auto;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: 60px repeat(10, 1fr) 80px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        min-width: 700px;
+    }
+
+    .grid-header {
+        background: #f9fafb;
+        text-align: center;
+        padding: 8px 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-bottom: 1px solid #e5e7eb;
+        border-right: 1px solid #e5e7eb;
+    }
+
+    .grid-header:last-child { border-right: none; }
+
+    .day-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #f9fafb;
+        border-right: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0 8px;
+    }
+
+    .day-label:last-child { border-bottom: none; }
+
+    .time-cell {
+        height: 48px;
+        border-right: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+        cursor: pointer;
+        transition: background 0.1s;
+        position: relative;
+    }
+
+    .time-cell:last-of-type { border-right: none; }
+    .time-cell.last-row { border-bottom: none; }
+
+    .time-cell.selected {
+        background: #3b5bdb;
+    }
+
+    .time-cell.selected::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
+        background-size: 8px 8px;
+    }
+
+    .time-cell:not(.selected):hover {
+        background: #eff6ff;
+    }
+
+    .time-cell.locked {
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .daily-total {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 8px;
+        font-size: 0.8rem;
+        color: #6b7280;
+        border-bottom: 1px solid #e5e7eb;
+        white-space: nowrap;
+    }
+
+    .daily-total.last-row { border-bottom: none; }
+
+    .submit-row {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        align-items: center;
+    }
+
+    #status-banner {
+        margin-top: 12px;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        display: none;
+    }
+
+    #status-banner.success {
+        background: #d1fae5;
+        color: #065f46;
+        display: block;
+    }
+
+    #status-banner.error {
+        background: #fee2e2;
+        color: #991b1b;
+        display: block;
+    }
+</style>
+
+<div class="schedule-container">
+
+    {{/* Header */}}
+    <div class="schedule-header">
+        <div>
+            <span class="schedule-title">My Schedule</span>
+            <span class="weekly-total" id="weekly-total-display">
+                {{if .Schedule}}({{printf "%.2f" .Schedule.WeeklyTotal}} hrs){{else}}(0.00 hrs){{end}}
+            </span>
+        </div>
+        <div class="header-right">
+            {{if .Schedule}}
+                {{if eq .Schedule.Status "pending"}}
+                    <span class="status-badge status-pending">Pending</span>
+                {{else if eq .Schedule.Status "approved"}}
+                    <span class="status-badge status-approved">Approved</span>
+                {{else if eq .Schedule.Status "rejected"}}
+                    <span class="status-badge status-rejected">Rejected</span>
+                {{end}}
+                <button class="btn btn-dark" id="edit-btn" onclick="enableEditing()">Edit</button>
+            {{end}}
+        </div>
+    </div>
+
+    {{/* Rejection notice */}}
+    {{if .Schedule}}
+        {{if eq .Schedule.Status "rejected"}}
+            <div class="rejection-notice">
+                <strong>Your schedule was rejected. Please review the comment below and resubmit.</strong>
+                {{if .Schedule.AdminComment}}{{.Schedule.AdminComment}}{{end}}
+            </div>
+        {{end}}
+    {{end}}
+
+    {{/* Legend */}}
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-swatch swatch-selected"></div>
+            <span>Normal schedule</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-swatch swatch-unselected"></div>
+            <span>Unavailable</span>
+        </div>
+    </div>
+
+    {{/* Grid */}}
+    <div class="grid-wrapper">
+        <div class="grid" id="schedule-grid">
+
+            {{/* Header row */}}
+            <div class="grid-header"></div>
+            <div class="grid-header">8<br>am</div>
+            <div class="grid-header">9<br>am</div>
+            <div class="grid-header">10<br>am</div>
+            <div class="grid-header">11<br>am</div>
+            <div class="grid-header">12<br>pm</div>
+            <div class="grid-header">1<br>pm</div>
+            <div class="grid-header">2<br>pm</div>
+            <div class="grid-header">3<br>pm</div>
+            <div class="grid-header">4<br>pm</div>
+            <div class="grid-header">5<br>pm</div>
+            <div class="grid-header"></div>
+
+            {{/* Day rows */}}
+            {{range $di, $day := .Days}}
+                <div class="day-label {{if eq $di 4}}last-row{{end}}">{{$day}}</div>
+                {{range $hi, $hour := $.Hours}}
+                    <div
+                        class="time-cell {{if eq $di 4}}last-row{{end}}"
+                        data-day="{{$day}}"
+                        data-hour="{{$hour}}"
+                        id="cell-{{$day}}-{{$hi}}"
+                        onclick="toggleCell(this)"
+                    ></div>
+                {{end}}
+                <div class="daily-total {{if eq $di 4}}last-row{{end}}" id="daily-{{$day}}">
+                    0.00 hrs
+                </div>
+            {{end}}
+        </div>
+    </div>
+
+    {{/* Submit row */}}
+    <div
+    class="submit-row"
+    id="submit-row"
+    {{if .Schedule}}
+        {{if ne .Schedule.Status "rejected"}}
+            style="display:none"
+        {{end}}
+    {{end}}>
+        <button
+            class="btn btn-blue"
+            id="submit-btn"
+            onclick="submitSchedule()">
+            Submit Schedule
+        </button>
+    </div>
+
+    <div id="status-banner"></div>
+
+</div>
+
+<script id="schedule-data" type="application/json">
+{
+    "locked": {{if .Schedule}}{{if eq .Schedule.Status "draft"}}false{{else}}true{{end}}{{else}}false{{end}},
+    "blocks": [
+        {{- if .Schedule -}}
+            {{- range $i, $block := .Schedule.Blocks -}}
+                {{- if $i}},{{end -}}
+                {
+                    "day": "{{ $block.Day }}",
+                    "start": "{{ $block.StartTime }}",
+                    "end": "{{ $block.EndTime }}"
+                }
+            {{- end -}}
+        {{- end -}}
+    ]
+}
+</script>
+
+<script>
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+
+    const hours = [
+        "08:00",
+        "09:00",
+        "10:00",
+        "11:00",
+        "12:00",
+        "13:00",
+        "14:00",
+        "15:00",
+        "16:00",
+        "17:00"
+    ];
+
+    const scheduleData = JSON.parse(
+        document.getElementById("schedule-data").textContent
+    );
+
+    let isLocked = scheduleData.locked;
+    let isDragging = false;
+    let dragValue = null;
+
+    scheduleData.blocks.forEach(block => {
+        const startIdx = hours.indexOf(block.start);
+        const endIdx = hours.indexOf(block.end);
+
+        for (let i = startIdx; i < endIdx; i++) {
+            const cell = document.getElementById(`cell-${block.day}-${i}`);
+
+            if (cell) {
+                cell.classList.add("selected");
+            }
+        }
+    });
+
+    updateAllTotals();
+
+    if (isLocked) {
+        lockGrid();
+    }
+
+    function lockGrid() {
+        document.querySelectorAll('.time-cell').forEach(c => c.classList.add('locked'));
+    }
+
+    function unlockGrid() {
+        document.querySelectorAll('.time-cell').forEach(c => c.classList.remove('locked'));
+    }
+
+    function enableEditing() {
+        isLocked = false;
+        unlockGrid();
+        document.getElementById('submit-row').style.display = 'flex';
+        document.getElementById('edit-btn').style.display = 'none';
+    }
+
+    function toggleCell(cell) {
+        if (isLocked) return;
+        cell.classList.toggle('selected');
+        updateAllTotals();
+    }
+
+    // drag to select
+    document.getElementById('schedule-grid').addEventListener('mousedown', e => {
+        if (isLocked) return;
+        if (!e.target.classList.contains('time-cell')) return;
+        isDragging = true;
+        dragValue = !e.target.classList.contains('selected');
+    });
+
+    document.getElementById('schedule-grid').addEventListener('mouseover', e => {
+        if (!isDragging) return;
+        if (!e.target.classList.contains('time-cell')) return;
+        e.target.classList.toggle('selected', dragValue);
+        updateAllTotals();
+    });
+
+    document.addEventListener('mouseup', () => { isDragging = false; });
+
+    function updateAllTotals() {
+        let weekly = 0;
+        days.forEach(day => {
+            let count = 0;
+            hours.forEach((_, i) => {
+                const cell = document.getElementById(`cell-${day}-${i}`);
+                if (cell && cell.classList.contains('selected')) count++;
+            });
+            const dayTotal = count; // each cell = 1 hour
+            document.getElementById(`daily-${day}`).textContent = dayTotal.toFixed(2) + ' hrs';
+            weekly += dayTotal;
+        });
+        document.getElementById('weekly-total-display').textContent = `(${weekly.toFixed(2)} hrs)`;
+    }
+
+    function submitSchedule() {
+        const blocks = [];
+        days.forEach(day => {
+            let start = null;
+            hours.forEach((hour, i) => {
+                const cell = document.getElementById(`cell-${day}-${i}`);
+                const selected = cell && cell.classList.contains('selected');
+                if (selected && start === null) {
+                    start = hour;
+                }
+                if (!selected && start !== null) {
+                    blocks.push({ day, start_time: start, end_time: hour });
+                    start = null;
+                }
+                if (i === hours.length - 1 && selected && start !== null) {
+                    blocks.push({ day, start_time: start, end_time: "18:00" });
+                }
+            });
+        });
+
+        fetch('/schedule/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(blocks)
+        })
+        .then(res => res.text())
+        .then(html => {
+            const banner = document.getElementById('status-banner');
+            banner.outerHTML = html;
+        });
+    }
+</script>
+{{end}}

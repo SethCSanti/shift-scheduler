@@ -6,4 +6,6 @@ type TemplateData struct {
 	SuccessMessage string               // success message to display
 	Schedule       *Schedule            // current user's schedule
 	Schedules      map[string]*Schedule // all schedules (for admin approval page)
+	Days  []string
+	Hours []string
 }

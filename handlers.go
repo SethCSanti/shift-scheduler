@@ -4,7 +4,9 @@ import (
 	// native Go packages
 	"html/template"
 	"net/http"
-
+	"encoding/json"
+	"fmt"
+	"time"
 	// internal packages
 	// 3rd party packages
 	"golang.org/x/crypto/bcrypt"
@@ -38,7 +40,7 @@ func registerView(w http.ResponseWriter, r *http.Request) {
 }
 
 func registerSubmitView(w http.ResponseWriter, r *http.Request) {
-    // Parse form data
+	// Parse form data
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	email := r.FormValue("email")
@@ -78,21 +80,21 @@ func registerSubmitView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-    // Create new user and store in app state
-    role := "employee" // Default role for new users
-    if len(app.Users) == 0 {
-        role = "admin" // First user becomes admin
-    }
-    app.Users[username] = &User{
-        UserName: username,
-        PasswordHash: string(hash),
-        Role: role,
-        Email: email,
-    }
+	// Create new user and store in app state
+	role := "employee" // Default role for new users
+	if len(app.Users) == 0 {
+		role = "admin" // First user becomes admin
+	}
+	app.Users[username] = &User{
+		UserName:     username,
+		PasswordHash: string(hash),
+		Role:         role,
+		Email:        email,
+	}
 
-    // Redirect to login page after successful registration
-    saveData()
-    http.Redirect(w, r, "/login", http.StatusSeeOther)
+	// Redirect to login page after successful registration
+	saveData()
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 func loginView(w http.ResponseWriter, r *http.Request) {
@@ -105,57 +107,174 @@ func loginView(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginSubmitView(w http.ResponseWriter, r *http.Request) {
-    // Parse form data
-    username := r.FormValue("username")
-    password := r.FormValue("password")
+	// Parse form data
+	username := r.FormValue("username")
+	password := r.FormValue("password")
 
-    // Validate user credentials
-    user, exists := app.Users[username]
-    if !exists || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
-        data := TemplateData{
-            ErrorMessage: "Invalid username or password",
-        }
-        tmpl, err := template.ParseFiles("templates/base.html", "templates/login.html")
-        if err != nil {
-            http.Error(w, "template error", http.StatusInternalServerError)
-            return
-        }
-        tmpl.ExecuteTemplate(w, "base", data)
-        return
-    }
+	// Validate user credentials
+	user, exists := app.Users[username]
+	if !exists || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
+		data := TemplateData{
+			ErrorMessage: "Invalid username or password",
+		}
+		tmpl, err := template.ParseFiles("templates/base.html", "templates/login.html")
+		if err != nil {
+			http.Error(w, "template error", http.StatusInternalServerError)
+			return
+		}
+		tmpl.ExecuteTemplate(w, "base", data)
+		return
+	}
 
-    // Create a new session for the user
-    setSessionUser(w, username)
-    // Redirect to the home page
-    saveData()
-    http.Redirect(w, r, "/", http.StatusSeeOther)
+	// Create a new session for the user
+	setSessionUser(w, username)
+	// Redirect to the home page
+	saveData()
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func logoutView(w http.ResponseWriter, r *http.Request) {
-    // Clear the session
-    clearSessionUser(w)
-    // Redirect to the home page
-    http.Redirect(w, r, "/", http.StatusSeeOther)
+	// Clear the session
+	clearSessionUser(w)
+	// Redirect to the home page
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // phase 2 handlers
 
 func scheduleView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Schedule view"))
+	username, err := getSessionUser(r)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	data := TemplateData{
+		Schedule: app.Schedule[username],
+		User:     app.Users[username],
+	}
+	data.Days  = []string{"Mon", "Tue", "Wed", "Thu", "Fri"}
+    data.Hours = []string{"08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"}
+	tmpl, err := template.ParseFiles("templates/base.html", "templates/schedule.html")
+	if err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
+	tmpl.ExecuteTemplate(w, "base", data)
 }
 
 func approvalView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Approval view"))
+	username, err := getSessionUser(r)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if app.Users[username].Role != "admin" {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	for _, schedule := range app.Schedule {
+		if schedule.Status == "pending" {
+			schedule.UserName = username
+		}
+	}
+	data := TemplateData{
+		Schedules: app.Schedule,
+		User:      app.Users[username],
+	}
+	tmpl, err := template.ParseFiles("templates/base.html", "templates/approval.html")
+	if err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
+	tmpl.ExecuteTemplate(w, "base", data)
 }
 
 func submitView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Submit view"))
+    // get session user
+    username, err := getSessionUser(r)
+    if err != nil {
+        http.Error(w, "unauthorized", http.StatusUnauthorized)
+        return
+    }
+
+    // decode JSON body into a slice of TimeBlocks
+    var blocks []TimeBlock
+    if err := json.NewDecoder(r.Body).Decode(&blocks); err != nil {
+        http.Error(w, "invalid request body", http.StatusBadRequest)
+        return
+    }
+
+    // calculate daily totals and validate each block
+    dailyTotals := make(map[string]float64)
+    for _, block := range blocks {
+        start, err := time.Parse("15:04", block.StartTime)
+        if err != nil {
+            http.Error(w, "invalid start time", http.StatusBadRequest)
+            return
+        }
+        end, err := time.Parse("15:04", block.EndTime)
+        if err != nil {
+            http.Error(w, "invalid end time", http.StatusBadRequest)
+            return
+        }
+
+        hours := end.Sub(start).Hours()
+
+        // minimum shift is 3 hours
+        if hours < 3 {
+            w.WriteHeader(http.StatusBadRequest)
+            w.Write([]byte(`<div id="status-banner" class="banner error">Each shift must be at least 3 hours.</div>`))
+            return
+        }
+
+        dailyTotals[block.Day] += hours
+    }
+
+    // maximum 9 hours per day
+    for day, total := range dailyTotals {
+        if total > 9 {
+            w.WriteHeader(http.StatusBadRequest)
+            fmt.Fprintf(w, `<div id="status-banner" class="banner error">%s exceeds the 9 hour daily maximum.</div>`, day)
+            return
+        }
+    }
+
+    // calculate weekly total
+    weeklyTotal := 0.0
+    for _, total := range dailyTotals {
+        weeklyTotal += total
+    }
+
+    // weekly total must be between 20 and 40 hours
+    if weeklyTotal < 20 {
+        w.WriteHeader(http.StatusBadRequest)
+        w.Write([]byte(`<div id="status-banner" class="banner error">Weekly total must be at least 20 hours.</div>`))
+        return
+    }
+    if weeklyTotal > 40 {
+        w.WriteHeader(http.StatusBadRequest)
+        w.Write([]byte(`<div id="status-banner" class="banner error">Weekly total cannot exceed 40 hours.</div>`))
+        return
+    }
+
+    // save the schedule
+    app.Schedule[username] = &Schedule{
+        Blocks:      blocks,
+        DailyTotal:  dailyTotals,
+        WeeklyTotal: weeklyTotal,
+        Status:      "pending",
+        UserName:    username,
+    }
+
     saveData()
+
+    // return success banner
+    w.Write([]byte(`<div id="status-banner" class="banner success">Schedule submitted successfully and is pending approval.</div>`))
 }
 
 func decideView(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Decide view"))
-    saveData()
+	saveData()
 }
 
 // phase 3 handlers
@@ -166,5 +285,5 @@ func profileView(w http.ResponseWriter, r *http.Request) {
 
 func pictureView(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Profile picture update view"))
-    saveData()
+	saveData()
 }

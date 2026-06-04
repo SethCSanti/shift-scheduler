@@ -1,0 +1,51 @@
+{
+    "schedule": {
+        "testuser1": {
+            "blocks": [
+                {
+                    "day": "Mon",
+                    "start_time": "09:00",
+                    "end_time": "17:00"
+                },
+                {
+                    "day": "Tue",
+                    "start_time": "09:00",
+                    "end_time": "17:00"
+                },
+                {
+                    "day": "Wed",
+                    "start_time": "09:00",
+                    "end_time": "17:00"
+                },
+                {
+                    "day": "Thu",
+                    "start_time": "09:00",
+                    "end_time": "17:00"
+                },
+                {
+                    "day": "Fri",
+                    "start_time": "09:00",
+                    "end_time": "17:00"
+                }
+            ],
+            "daily_total": {
+                "Fri": 8,
+                "Mon": 8,
+                "Thu": 8,
+                "Tue": 8,
+                "Wed": 8
+            },
+            "weekly_total": 40,
+            "status": "pending",
+            "user_name": "testuser1"
+        }
+    },
+    "users": {
+        "testuser1": {
+            "user_name": "testuser1",
+            "password_hash": "$2a$10$RiQmyD0bXj27X.WU4NJoPuVhITDhzgWeuNprKbVYqdxSJpL503aVa",
+            "role": "admin",
+            "email": "test@byu.edu"
+        }
+    }
+}
