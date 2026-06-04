@@ -1,36 +1,42 @@
 package main
 
 import (
-    // native Go packages
-    "log"
-    "net/http"
-
-    // internal packages
-
-    // 3rd party packages
+	// native Go packages
+	"log"
+	"net/http"
+	// internal packages
+	// 3rd party packages
 )
 
 var app AppState
 
 func main() {
-    app.Users = make(map[string]*User)
-    app.Schedule = make(map[string]*Schedule)
-    mux := http.NewServeMux()
-    mux.HandleFunc("GET /{$}", home) // Returns full page, home page
-    mux.HandleFunc("GET /schedule", scheduleView) // Returns full page, schedule view
-    mux.HandleFunc("GET /approval", approvalView) // Returns full page, approval view
-    mux.HandleFunc("POST /schedule/submit", submitView) // Returns HTML fragment (HTMX), submission view
-    mux.HandleFunc("POST /schedule/decide", decideView) // Returns HTML fragment (HTMX), decision view
-    mux.HandleFunc("GET /register", registerView) // Returns HTML fragment (HTMX), registration view
-    mux.HandleFunc("POST /register", registerSubmitView) // Returns HTML fragment (HTMX), registration submission view
-    mux.HandleFunc("GET /login", loginView) // Returns HTML fragment (HTMX), login view
-    mux.HandleFunc("POST /login", loginSubmitView) // Returns HTML fragment (HTMX), login submission view
-    mux.HandleFunc("POST /logout", logoutView) // Returns HTML fragment (HTMX), logout view
-    mux.HandleFunc("GET /profile", profileView) // Returns full page, profile view
-    mux.HandleFunc("POST /profile/picture", pictureView) // Returns HTML fragment (HTMX), profile picture update view
+	mux := http.NewServeMux()
+	// create a file server that serves files from the "static" folder
+	fileServer := http.FileServer(http.Dir("./static"))
 
-    log.Print("starting server on http://localhost:4000")
+	// register it to handle any request starting with /static/
+	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
 
-    err := http.ListenAndServe(":4000", mux)
-    log.Fatal(err)
+	app.Users = make(map[string]*User)
+	app.Schedule = make(map[string]*Schedule)
+    
+    // routes
+	mux.HandleFunc("GET /{$}", home)                     // Returns full page, home page
+	mux.HandleFunc("GET /schedule", scheduleView)        // Returns full page, schedule view
+	mux.HandleFunc("GET /approval", approvalView)        // Returns full page, approval view
+	mux.HandleFunc("POST /schedule/submit", submitView)  // Returns HTML fragment (HTMX), submission view
+	mux.HandleFunc("POST /schedule/decide", decideView)  // Returns HTML fragment (HTMX), decision view
+	mux.HandleFunc("GET /register", registerView)        // Returns HTML fragment (HTMX), registration view
+	mux.HandleFunc("POST /register", registerSubmitView) // Returns HTML fragment (HTMX), registration submission view
+	mux.HandleFunc("GET /login", loginView)              // Returns HTML fragment (HTMX), login view
+	mux.HandleFunc("POST /login", loginSubmitView)       // Returns HTML fragment (HTMX), login submission view
+	mux.HandleFunc("POST /logout", logoutView)           // Returns HTML fragment (HTMX), logout view
+	mux.HandleFunc("GET /profile", profileView)          // Returns full page, profile view
+	mux.HandleFunc("POST /profile/picture", pictureView) // Returns HTML fragment (HTMX), profile picture update view
+
+	log.Print("starting server on http://localhost:4000")
+
+	err := http.ListenAndServe(":4000", mux)
+	log.Fatal(err)
 }
