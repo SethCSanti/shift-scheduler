@@ -1,12 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Approval</title>
-</head>
-<body>
-    <h1>Approval Page</h1>
-    <p>This is a basic HTML framework.</p>
-</body>
-</html>
+{{define "title"}}Approval - Shift Scheduler{{end}}
+
+{{define "content"}}
+<div style="padding: 24px;">
+    <h2>Schedule Approvals</h2>
+
+    {{if eq (len .Schedules) 0}}
+        <p>No schedules to review.</p>
+    {{else}}
+        {{range $username, $schedule := .Schedules}}
+            {{if eq $schedule.Status "pending"}}
+            <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">{{$username}}</h3>
+                    <span style="background: #fff3cd; color: #856404; padding: 4px 12px; border-radius: 99px; font-size: 0.85rem; font-weight: 600;">Pending</span>
+                </div>
+
+                <p style="margin: 0 0 8px; color: #666;">Weekly Total: {{printf "%.2f" $schedule.WeeklyTotal}} hrs</p>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+                    <thead>
+                        <tr style="background: #f9fafb;">
+                            <th style="padding: 8px; text-align: left; border: 1px solid #e5e7eb;">Day</th>
+                            <th style="padding: 8px; text-align: left; border: 1px solid #e5e7eb;">Start</th>
+                            <th style="padding: 8px; text-align: left; border: 1px solid #e5e7eb;">End</th>
+                            <th style="padding: 8px; text-align: left; border: 1px solid #e5e7eb;">Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range $schedule.Blocks}}
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #e5e7eb;">{{.Day}}</td>
+                            <td style="padding: 8px; border: 1px solid #e5e7eb;">{{.StartTime}}</td>
+                            <td style="padding: 8px; border: 1px solid #e5e7eb;">{{.EndTime}}</td>
+                            <td style="padding: 8px; border: 1px solid #e5e7eb;">{{index $schedule.DailyTotal .Day}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+
+                <form method="POST" action="/schedule/decide">
+                    <input type="hidden" name="targetUsername" value="{{$username}}">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; margin-bottom: 4px; font-weight: 500;">Comment (required if rejecting)</label>
+                        <textarea
+                            name="adminComment"
+                            rows="2"
+                            style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit;"
+                        ></textarea>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button
+                            type="submit"
+                            name="decision"
+                            value="approve"
+                            style="background: #065f46; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            Approve
+                        </button>
+                        <button
+                            type="submit"
+                            name="decision"
+                            value="reject"
+                            style="background: #991b1b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            Reject
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {{end}}
+        {{end}}
+    {{end}}
+
+    <div id="status-banner"></div>
+</div>
+{{end}}
