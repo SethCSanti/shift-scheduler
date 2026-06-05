@@ -37,7 +37,7 @@ func saveData() {
 		return
 	}
 
-	err = os.WriteFile("data.json", data, 0644)
+	err = os.WriteFile("data/data.json", data, 0644)
 	if err != nil {
 		log.Printf("Error writing data file: %v", err)
 	}
