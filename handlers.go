@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"io"
+	"os"
 	// internal packages
 	// 3rd party packages
 	"golang.org/x/crypto/bcrypt"
@@ -129,7 +131,6 @@ func loginSubmitView(w http.ResponseWriter, r *http.Request) {
 	// Create a new session for the user
 	setSessionUser(w, username)
 	// Redirect to the home page
-	saveData()
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -137,7 +138,7 @@ func logoutView(w http.ResponseWriter, r *http.Request) {
 	// Clear the session
 	clearSessionUser(w)
 	// Redirect to the home page
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 // phase 2 handlers
@@ -163,30 +164,25 @@ func scheduleView(w http.ResponseWriter, r *http.Request) {
 }
 
 func approvalView(w http.ResponseWriter, r *http.Request) {
-	username, err := getSessionUser(r)
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-	if app.Users[username].Role != "admin" {
-		http.Error(w, "forbidden", http.StatusForbidden)
-		return
-	}
-	for _, schedule := range app.Schedule {
-		if schedule.Status == "pending" {
-			schedule.UserName = username
-		}
-	}
-	data := TemplateData{
-		Schedules: app.Schedule,
-		User:      app.Users[username],
-	}
-	tmpl, err := template.ParseFiles("templates/base.html", "templates/approval.html")
-	if err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
-		return
-	}
-	tmpl.ExecuteTemplate(w, "base", data)
+    username, err := getSessionUser(r)
+    if err != nil {
+        http.Redirect(w, r, "/login", http.StatusSeeOther)
+        return
+    }
+    if app.Users[username].Role != "admin" {
+        http.Error(w, "forbidden", http.StatusForbidden)
+        return
+    }
+    data := TemplateData{
+        Schedules: app.Schedule,
+        User:      app.Users[username],
+    }
+    tmpl, err := template.ParseFiles("templates/base.html", "templates/approval.html")
+    if err != nil {
+        http.Error(w, "template error", http.StatusInternalServerError)
+        return
+    }
+    tmpl.ExecuteTemplate(w, "base", data)
 }
 
 func submitView(w http.ResponseWriter, r *http.Request) {
@@ -273,17 +269,101 @@ func submitView(w http.ResponseWriter, r *http.Request) {
 }
 
 func decideView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Decide view"))
+	username, err := getSessionUser(r)
+    if err != nil {
+        http.Redirect(w, r, "/login", http.StatusSeeOther)
+        return
+    }
+    if app.Users[username].Role != "admin" {
+        http.Error(w, "forbidden", http.StatusForbidden)
+        return
+    }
+	targetUsername := r.FormValue("targetUsername")
+	decision := r.FormValue("decision")
+	adminComment := r.FormValue("adminComment")
+
+	schedule, exists := app.Schedule[targetUsername]
+	if !exists {
+		http.Error(w, "schedule not found", http.StatusNotFound)
+		return
+	}
+
+	if decision == "approve" {
+		schedule.Status = "approved"
+	} else if decision == "reject" {
+		schedule.Status = "rejected"
+		schedule.AdminComment = adminComment
+	}
 	saveData()
+	fmt.Fprintf(w, `<div id="status-banner" class="banner success">Schedule %sd for %s.</div>`, decision, targetUsername)
+	http.Redirect(w, r, "/approval", http.StatusSeeOther)
 }
 
 // phase 3 handlers
 
 func profileView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Profile view"))
+	username, err := getSessionUser(r)
+    if err != nil {
+        http.Redirect(w, r, "/login", http.StatusSeeOther)
+        return
+    }
+	data := TemplateData{
+		User: app.Users[username],
+	}
+	tmpl, err := template.ParseFiles("templates/base.html", "templates/profile.html")
+	if err != nil {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	err = tmpl.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func pictureView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Profile picture update view"))
+	// get session user
+	username, err := getSessionUser(r)
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// parse the multipart form (32MB max memory)
+	err = r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		http.Error(w, "error parsing form", http.StatusBadRequest)
+		return
+	}
+
+	// get the uploaded file
+	file, header, err := r.FormFile("picture")
+	if err != nil {
+		http.Error(w, "error reading file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// create destination file in static/uploads/
+	dst, err := os.Create("static/uploads/" + header.Filename)
+	if err != nil {
+		http.Error(w, "error saving file", http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	// copy uploaded file to destination
+	_, err = io.Copy(dst, file)
+	if err != nil {
+		http.Error(w, "error saving file", http.StatusInternalServerError)
+		return
+	}
+
+	// update user's profile picture
+	app.Users[username].ProfilePicture = header.Filename
+
 	saveData()
+
+	w.Write([]byte(`<div id="status-banner" class="banner success">Profile picture updated successfully.</div>`))
 }
